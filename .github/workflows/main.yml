@@ -2,11 +2,11 @@ name: Daily Bug Bounty Report
 
 on:
   schedule:
-    - cron: '0 7 * * *'
+    - cron: '0 7 * * *'  # كل يوم الساعة 9 صباحًا بتوقيت مصر (UTC+2)
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: write  # مهم علشان يقدر يعمل commit/push
 
 jobs:
   build:
@@ -35,3 +35,11 @@ jobs:
           git add daily_report_*.md
           git commit -m "📝 Add daily report" || echo "No changes to commit"
           git push
+
+      - name: Send to Telegram
+        run: |
+          FILE_NAME=$(ls daily_report_*.md)
+          curl -F document=@"$FILE_NAME" \
+               -F chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+               -F caption="📄 Daily Bug Bounty Report — $FILE_NAME" \
+               "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendDocument"
