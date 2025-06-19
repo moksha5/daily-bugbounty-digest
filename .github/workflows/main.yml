@@ -1,33 +1,7 @@
-name: Daily Bug Bounty Report
-
-on:
-  schedule:
-    - cron: '0 7 * * *'  
-  workflow_dispatch:  
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout Repo
-      uses: actions/checkout@v2
-
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.10'
-
-    - name: Install Dependencies
-      run: pip install feedparser
-
-    - name: Run Script
-      run: python script.py
-
-    - name: Commit and Push Report
-      run: |
-        git config user.name "GitHub Actions Bot"
-        git config user.email "actions@github.com"
-        git add daily_report_*.md
-        git commit -m "📝 Add daily report"
-        git push
+- name: Commit and Push Report
+  run: |
+    git config user.name "GitHub Actions Bot"
+    git config user.email "actions@github.com"
+    git add daily_report_*.md
+    git commit -m "📝 Add daily report" || echo "No changes to commit"
+    git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }} HEAD:main
