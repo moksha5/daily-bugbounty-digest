@@ -2,6 +2,8 @@ import feedparser
 from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
+import pdfkit
+import os
 
 # === إعداد التاريخ ===
 today = datetime.now().strftime("%Y-%m-%d")
@@ -55,6 +57,27 @@ with open(output_file, "w", encoding="utf-8") as f:
         tweets = fetch_tweets_from_nitter(url)
         for tweet in tweets:
             f.write(f"- {tweet}\n")
+
+# === Convert .md to .html then PDF ===
+html_file = f"{output_file.replace('.md', '.html')}"
+pdf_file = f"{output_file.replace('.md', '.pdf')}"
+
+# Markdown to HTML
+with open(output_file, "r", encoding="utf-8") as f:
+    content_md = f.read()
+
+import markdown
+content_html = markdown.markdown(content_md)
+
+with open(html_file, "w", encoding="utf-8") as f:
+    f.write(content_html)
+
+# HTML to PDF (requires wkhtmltopdf)
+try:
+    pdfkit.from_file(html_file, pdf_file)
+    print(f"✅ PDF created: {pdf_file}")
+except Exception as e:
+    print(f"❌ Failed to generate PDF: {e}")
         f.write("\n")
 
 print(f"✅ Report created: {output_file}")
