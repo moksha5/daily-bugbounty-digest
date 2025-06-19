@@ -21,14 +21,18 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install wkhtmltopdf
-        run: sudo apt-get install -y wkhtmltopdf
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
       - name: Install Dependencies
         run: |
+          sudo apt-get install -y wkhtmltopdf
           pip install feedparser requests beautifulsoup4 markdown pdfkit
+          npm install puppeteer
 
-      - name: Run Script
+      - name: Run Python Script
         run: python script.py
 
       - name: Commit and Push Report
@@ -39,23 +43,21 @@ jobs:
           git commit -m "📝 Add daily report" || echo "No changes to commit"
           git push
 
+      - name: Take Screenshot of GitHub Page
+        run: |
+          node screenshot.js "https://github.com/${{ github.repository }}/tree/main"
+
       - name: Send PDF to Telegram
         run: |
           FILE_PDF=$(ls daily_report_*.pdf)
           curl -F document=@"$FILE_PDF" \
                -F chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-               -F caption="📄 Daily Bug Bounty PDF — $FILE_PDF" \
+               -F caption="📄 Daily Bug Bounty Report — $FILE_PDF" \
                "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendDocument"
-
-      - name: Screenshot GitHub Report Page
-        uses: swinton/screenshot-website@v1
-        with:
-          source: "https://github.com/${{ github.repository }}/blob/main/daily_report_${{ github.run_attempt }}.md"
-          destination: "./screenshot.png"
 
       - name: Send Screenshot to Telegram
         run: |
           curl -F photo=@"screenshot.png" \
                -F chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-               -F caption="📸 Screenshot of the report" \
+               -F caption="📸 Screenshot of the report page" \
                "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendPhoto"
