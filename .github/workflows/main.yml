@@ -2,11 +2,11 @@ name: Daily Bug Bounty Report
 
 on:
   schedule:
-    - cron: '0 7 * * *'  # كل يوم الساعة 9 صباحًا بتوقيت مصر (UTC+2)
+    - cron: '0 7 * * *'
   workflow_dispatch:
 
 permissions:
-  contents: write  # مهم علشان يقدر يعمل commit/push
+  contents: write
 
 jobs:
   build:
@@ -21,9 +21,12 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Install wkhtmltopdf
+        run: sudo apt-get install -y wkhtmltopdf
+
       - name: Install Dependencies
         run: |
-          pip install feedparser requests beautifulsoup4
+          pip install feedparser requests beautifulsoup4 markdown pdfkit
 
       - name: Run Script
         run: python script.py
@@ -32,14 +35,27 @@ jobs:
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
-          git add daily_report_*.md
+          git add daily_report_*.*
           git commit -m "📝 Add daily report" || echo "No changes to commit"
           git push
 
-      - name: Send to Telegram
+      - name: Send PDF to Telegram
         run: |
-          FILE_NAME=$(ls daily_report_*.md)
-          curl -F document=@"$FILE_NAME" \
+          FILE_PDF=$(ls daily_report_*.pdf)
+          curl -F document=@"$FILE_PDF" \
                -F chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-               -F caption="📄 Daily Bug Bounty Report — $FILE_NAME" \
+               -F caption="📄 Daily Bug Bounty PDF — $FILE_PDF" \
                "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendDocument"
+
+      - name: Screenshot GitHub Report Page
+        uses: swinton/screenshot-website@v1
+        with:
+          source: "https://github.com/${{ github.repository }}/blob/main/daily_report_${{ github.run_attempt }}.md"
+          destination: "./screenshot.png"
+
+      - name: Send Screenshot to Telegram
+        run: |
+          curl -F photo=@"screenshot.png" \
+               -F chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+               -F caption="📸 Screenshot of the report" \
+               "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendPhoto"
