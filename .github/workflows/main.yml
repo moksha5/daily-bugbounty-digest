@@ -2,8 +2,8 @@ name: Daily Bug Bounty Report
 
 on:
   schedule:
-    - cron: '0 7 * * *'  # يوميًا الساعة 9 صباحًا بتوقيت مصر
-  workflow_dispatch:  # تشغيل يدوي كمان
+    - cron: '0 7 * * *'  
+  workflow_dispatch:  
 
 jobs:
   build:
@@ -23,3 +23,11 @@ jobs:
 
     - name: Run Script
       run: python script.py
+
+    - name: Commit and Push Report
+      run: |
+        git config user.name "GitHub Actions Bot"
+        git config user.email "actions@github.com"
+        git add daily_report_*.md
+        git commit -m "📝 Add daily report"
+        git push
